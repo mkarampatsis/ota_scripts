@@ -1,15 +1,17 @@
-import re
 import json
-from datetime import datetime
+import re
 
 import pandas as pd
-from pymongo import MongoClient
+from datetime import datetime, timezone
+
+from connection import get_database
+from models.cofog import Cofog
+from models.ota import Ota
+
+dbname = get_database()
 
 # ---------- CONFIG ----------
 EXCEL_FILE = "ota_table.xlsx"
-MONGO_URI = "mongodb://localhost:27017"
-DB_NAME = "psped"
-COFOG_COLLECTION = "cofog"
 OUTPUT_JSON = "ota_table_import.json"
 
 # Fixed refs (adjust if needed)
@@ -42,28 +44,29 @@ def extract_code(value: str | float | None) -> str | None:
 
 def build_cofog_name_index(cofog_docs):
     """
-    Build a flat index: code -> name for cofog1, cofog2, cofog3.
+    Build a flat index: code -> name for cofog1, cofog2, cofog3
+    using MongoEngine document attributes.
     """
     index = {}
 
     for doc in cofog_docs:
-        # cofog1
-        code1 = doc.get("code")
-        name1 = doc.get("name")
+        # Cofog1
+        code1 = doc.code
+        name1 = doc.name
         if code1 and name1:
             index[code1] = name1
 
-        # cofog2
-        for c2 in doc.get("cofog2", []):
-            code2 = c2.get("code")
-            name2 = c2.get("name")
+        # Cofog2
+        for c2 in doc.cofog2:
+            code2 = c2.code
+            name2 = c2.name
             if code2 and name2:
                 index[code2] = name2
 
-            # cofog3
-            for c3 in c2.get("cofog3", []):
-                code3 = c3.get("code")
-                name3 = c3.get("name")
+            # Cofog3
+            for c3 in c2.cofog3:
+                code3 = c3.code
+                name3 = c3.name
                 if code3 and name3:
                     index[code3] = name3
 
@@ -77,16 +80,9 @@ def get_cofog_name(code: str | None, index: dict) -> str | None:
 
 
 # ---------- MAIN ----------
-
-
 def main():
-    # Connect to MongoDB
-    client = MongoClient(MONGO_URI)
-    db = client[DB_NAME]
-    cofog_collection = db[COFOG_COLLECTION]
-
     # Load all cofog docs and build index
-    cofog_docs = list(cofog_collection.find({}))
+    cofog_docs = list(Cofog.objects())
     cofog_index = build_cofog_name_index(cofog_docs)
 
     # Read Excel
@@ -104,7 +100,7 @@ def main():
     col_8 = "Κείμενο αρμοδιότητας"
     col_9 = "Φορέα Δημόσιας Πολιτικής (Κωδικός)"
 
-    now_iso = datetime.utcnow().isoformat() + "Z"
+    now_iso = datetime.now(timezone.utc).isoformat()
 
     documents = []
 

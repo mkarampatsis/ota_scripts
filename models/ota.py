@@ -1,9 +1,8 @@
 import mongoengine as me
-from datetime import datetime
-from src.models.timestamp import TimeStampedModel
-from src.config import MONGO_PSPED_DB
-from src.models.instruction_provision import InstructionProvision
-from src.models.legal_provision import LegalProvision
+# from models.instruction_provision import InstructionProvision
+# from models.legal_provision import LegalProvision
+from models.timestamp import TimeStampedModel
+
 
 class COFOG(me.EmbeddedDocument):
   cofog1 = me.StringField()
@@ -22,7 +21,7 @@ class PublicPolicyAgency(me.EmbeddedDocument):
   subOrganizationOfCode = me.StringField()
 
 class Ota(TimeStampedModel):
-  meta = {"collection": "ota", "db_alias": MONGO_PSPED_DB}
+  meta = {"collection": "ota", "db_alias": "psped"}
 
   remitText = me.StringField(required=True)
   remitCompetence = me.StringField(
@@ -52,75 +51,77 @@ class Ota(TimeStampedModel):
       'Αρμοδιότητα που συνιστά αποστολή του κράτους (Κρατική)'
     ],
   )
-  legalProvisionRefs = me.ListField(me.ReferenceField(LegalProvision))
-  instructionProvisionRefs = me.ListField(me.ReferenceField(InstructionProvision))
+  # legalProvisionRefs = me.ListField(me.ReferenceField(LegalProvision))
+  # instructionProvisionRefs = me.ListField(me.ReferenceField(InstructionProvision))
+  legalProvisionRefs = me.ListField(me.StringField())
+  instructionProvisionRefs = me.ListField(me.StringField())
   publicPolicyAgency = me.EmbeddedDocumentField(PublicPolicyAgency)
   cofog = me.EmbeddedDocumentField(COFOG)
   status = me.StringField(choices=["ΕΝΕΡΓΗ", "ΑΝΕΝΕΡΓΗ"], default="ΕΝΕΡΓΗ")
   finalized = me.BooleanField(default=False)
   elasticSync = me.BooleanField(default=False)
 
-  def to_dict(self):
+  # def to_dict(self):
     
-    def provision_to_dict_instruction(provision: InstructionProvision):
-      if not provision:
-          return None
+  #   def provision_to_dict_instruction(provision: InstructionProvision):
+  #     if not provision:
+  #         return None
 
-      return {
-        "_id": str(provision.id),
-        "regulatedObject": provision.regulatedObject.to_mongo(),
-        "instructionAct": (
-            provision.instructionAct.to_mongo()
-            if provision.instructionAct else None
-        ),
-        "instructionActKey" : provision.instructionAct.instructionActKey if provision.instructionAct else None,
-        # "instructionProvisionSpecs": provision.instructionProvisionSpecs.to_mongo(),
-        "instructionProvisionText": provision.instructionProvisionText,
-        "instructionPages": provision.instructionPages.to_mongo(),
-      }
+  #     return {
+  #       "_id": str(provision.id),
+  #       "regulatedObject": provision.regulatedObject.to_mongo(),
+  #       "instructionAct": (
+  #           provision.instructionAct.to_mongo()
+  #           if provision.instructionAct else None
+  #       ),
+  #       "instructionActKey" : provision.instructionAct.instructionActKey if provision.instructionAct else None,
+  #       # "instructionProvisionSpecs": provision.instructionProvisionSpecs.to_mongo(),
+  #       "instructionProvisionText": provision.instructionProvisionText,
+  #       "instructionPages": provision.instructionPages.to_mongo(),
+  #     }
     
-    # def provision_to_dict_legal(provision: LegalProvision):
-    #   if not provision:
-    #       return None
+  #   def provision_to_dict_legal(provision: LegalProvision):
+  #     if not provision:
+  #         return None
       
-    #   return {
-    #     "_id": str(provision.id),
-    #     "regulatedObject": provision.regulatedObject.to_mongo(),
-    #     "legalAct": (
-    #         provision.legalAct.to_mongo()
-    #         if provision.legalAct else None
-    #     ),
-    #     "legalActKey" : provision.legalAct.legalActKey if provision.legalAct else None,
-    #     "legalProvisionSpecs": provision.legalProvisionSpecs.to_mongo(),
-    #     "legalProvisionText": provision.legalProvisionText,
-    #   }
+  #     return {
+  #       "_id": str(provision.id),
+  #       "regulatedObject": provision.regulatedObject.to_mongo(),
+  #       "legalAct": (
+  #           provision.legalAct.to_mongo()
+  #           if provision.legalAct else None
+  #       ),
+  #       "legalActKey" : provision.legalAct.legalActKey if provision.legalAct else None,
+  #       "legalProvisionSpecs": provision.legalProvisionSpecs.to_mongo(),
+  #       "legalProvisionText": provision.legalProvisionText,
+  #     }
 
-    # # Convert instructionProvisionRefs (ObjectIds) → actual docs
-    # legal_provisions = []
-    # for ref in self.legalProvisionRefs:
-    #   provision = LegalProvision.objects(id=ref.id).first()
-    #   if provision:
-    #     legal_provisions.append(provision_to_dict_legal(provision))
+  #   # Convert instructionProvisionRefs (ObjectIds) → actual docs
+  #   legal_provisions = []
+  #   for ref in self.legalProvisionRefs:
+  #     provision = LegalProvision.objects(id=ref.id).first()
+  #     if provision:
+  #       legal_provisions.append(provision_to_dict_legal(provision))
 
-    # instruction_provisions = []
-    # for ref in self.instructionProvisionRefs:
-    #   provision = InstructionProvision.objects(id=ref.id).first()
-    #   if provision:
-    #     instruction_provisions.append(provision_to_dict_instruction(provision))
+  #   instruction_provisions = []
+  #   for ref in self.instructionProvisionRefs:
+  #     provision = InstructionProvision.objects(id=ref.id).first()
+  #     if provision:
+  #       instruction_provisions.append(provision_to_dict_instruction(provision))
 
-    # return {
-    #   "_id": str(self.id),
-    #   "remitText": self.remitText,
-    #   "remitCompetence": self.remitCompetence,
-    #   "remitType": self.remitType,
-    #   "remitLocalOrGlobal": self.remitLocalOrGlobal,
-    #   "legalProvisions": legal_provisions,
-    #   "instructionProvisions": instruction_provisions,
-    #   "publicPolicyAgency": self.publicPolicyAgency.to_mongo() if self.publicPolicyAgency else None,
-    #   "cofog": self.cofog.to_mongo() if hasattr(self, 'cofog') else None,
-    #   "status": self.status,
-    #   "finalized": self.finalized,
-    #   "elasticSync": self.elasticSync,
-    #   "createdAt": self.createdAt,
-    #   "updatedAt": self.updatedAt,
-    # }
+  #   return {
+  #     "_id": str(self.id),
+  #     "remitText": self.remitText,
+  #     "remitCompetence": self.remitCompetence,
+  #     "remitType": self.remitType,
+  #     "remitLocalOrGlobal": self.remitLocalOrGlobal,
+  #     "legalProvisions": legal_provisions,
+  #     "instructionProvisions": instruction_provisions,
+  #     "publicPolicyAgency": self.publicPolicyAgency.to_mongo() if self.publicPolicyAgency else None,
+  #     "cofog": self.cofog.to_mongo() if hasattr(self, 'cofog') else None,
+  #     "status": self.status,
+  #     "finalized": self.finalized,
+  #     "elasticSync": self.elasticSync,
+  #     "createdAt": self.createdAt,
+  #     "updatedAt": self.updatedAt,
+  #   }

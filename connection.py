@@ -6,9 +6,7 @@ import os
 load_dotenv()
 
 ATLAS_DB_PSPED = os.getenv("ATLAS_DB_PSPED")
-ATLAS_COLLECTION = os.getenv("ATLAS_Collection")
 MONGO_URI = os.getenv("MONGO_URI")
-
 
 def get_database():
 
