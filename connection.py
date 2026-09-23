@@ -1,0 +1,25 @@
+from mongoengine import connect
+from dotenv import load_dotenv
+
+import os
+
+load_dotenv()
+
+ATLAS_DB_PSPED = os.getenv("ATLAS_DB_PSPED")
+ATLAS_COLLECTION = os.getenv("ATLAS_Collection")
+MONGO_URI = os.getenv("MONGO_URI")
+
+
+def get_database():
+
+    connect(
+        host=MONGO_URI,
+        db=ATLAS_DB_PSPED,
+        alias=ATLAS_DB_PSPED,
+    )
+
+    return connect
+
+
+if __name__ == "__main__":
+    dbname = get_database()
