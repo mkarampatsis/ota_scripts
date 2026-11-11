@@ -6,14 +6,24 @@ import os
 load_dotenv()
 
 ATLAS_DB_PSPED = os.getenv("ATLAS_DB_PSPED")
+ATLAS_DB_SDAD = os.getenv("ATLAS_DB_SDAD")
 MONGO_URI = os.getenv("MONGO_URI")
 
+
 def get_database():
+
+    print("Connecting to MongoDB...")
 
     connect(
         host=MONGO_URI,
         db=ATLAS_DB_PSPED,
         alias=ATLAS_DB_PSPED,
+    )
+
+    connect(
+        host=MONGO_URI,
+        db=ATLAS_DB_SDAD,
+        alias=ATLAS_DB_SDAD,
     )
 
     return connect

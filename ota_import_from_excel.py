@@ -1,14 +1,20 @@
+from http import client
 import json
 import re
+import os
 
+from mongoengine import get_connection
 import pandas as pd
 from datetime import datetime, timezone
 
-from connection import get_database
+from connection import ATLAS_DB_SDAD, MONGO_URI, get_database
 from models.cofog import Cofog
 from models.ota import Ota
+from pymongo import MongoClient
 
-dbname = get_database()
+get_database()
+db_sdad = get_connection(ATLAS_DB_SDAD).get_database(ATLAS_DB_SDAD)
+organization_collection = db_sdad["organizations"]
 
 # ---------- CONFIG ----------
 EXCEL_FILE = "ota_table.xlsx"
@@ -81,6 +87,54 @@ def get_cofog_name(code: str | None, index: dict) -> str | None:
 
 # ---------- MAIN ----------
 def main():
+
+    client = MongoClient(
+        MONGO_URI,
+        serverSelectionTimeoutMS=10_000,
+    )
+    client.admin.command("ping")
+    print("MongoDB connection succeeded")
+
+    print("Loading organizations...")
+
+    organization_by_code = {}
+    organizationCode_by_code = {}
+    organizationType_by_code = {}
+    subOrganizationOf_by_code = {}
+    subOrganizationOfCode_by_code = {}
+
+    cursor = organization_collection.find(
+        {},
+        {
+            "_id": 0,
+            "code": 1,
+            "preferredLabel": 1,
+            "organizationType.description": 1,
+            "subOrganizationOf.code": 1,
+            "subOrganizationOf.preferredLabel": 1,
+        },
+    )
+
+    for org in cursor:
+        code = org.get("code")
+        print(f"Processing organization code: {code}")
+        if not code:
+            continue
+
+        organization_by_code[str(code)] = org.get("preferredLabel", "")
+        organizationCode_by_code[str(code)] = org.get("code", "")
+        organizationType_by_code[str(code)] = org.get("organizationType", {}).get(
+            "description", ""
+        )
+        subOrganizationOf_by_code[str(code)] = org.get("subOrganizationOf", {}).get(
+            "preferredLabel", ""
+        )
+        subOrganizationOfCode_by_code[str(code)] = org.get("subOrganizationOf", {}).get(
+            "code", ""
+        )
+
+    print(f"Loaded {len(organization_by_code):,} organizations.")
+
     # Load all cofog docs and build index
     cofog_docs = list(Cofog.objects())
     cofog_index = build_cofog_name_index(cofog_docs)
@@ -135,12 +189,14 @@ def main():
             "legalProvisionRefs": [{"$oid": oid} for oid in LEGAL_PROVISION_REFS],
             "instructionProvisionRefs": [],
             "publicPolicyAgency": {
-                "organization": "",
+                "organization": organization_by_code.get(str(org_code), ""),
                 "organizationCode": org_code if pd.notna(org_code) else "",
-                "organizationType": "",
+                "organizationType": organizationType_by_code.get(str(org_code), ""),
                 "status": "Active",
-                "subOrganizationOf": "",
-                "subOrganizationOfCode": "",
+                "subOrganizationOf": subOrganizationOf_by_code.get(str(org_code), ""),
+                "subOrganizationOfCode": subOrganizationOfCode_by_code.get(
+                    str(org_code), ""
+                ),
             },
             "cofog": {
                 "cofog1": cofog1_code,
