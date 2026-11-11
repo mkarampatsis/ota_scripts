@@ -17,7 +17,7 @@ db_sdad = get_connection(ATLAS_DB_SDAD).get_database(ATLAS_DB_SDAD)
 organization_collection = db_sdad["organizations"]
 
 # ---------- CONFIG ----------
-EXCEL_FILE = "ota_table.xlsx"
+EXCEL_FILE = "ota_table_2.xlsx"
 OUTPUT_JSON = "ota_table_import.json"
 
 # Fixed refs (adjust if needed)
@@ -88,12 +88,12 @@ def get_cofog_name(code: str | None, index: dict) -> str | None:
 # ---------- MAIN ----------
 def main():
 
-    client = MongoClient(
-        MONGO_URI,
-        serverSelectionTimeoutMS=10_000,
-    )
-    client.admin.command("ping")
-    print("MongoDB connection succeeded")
+    # client = MongoClient(
+    #     MONGO_URI,
+    #     serverSelectionTimeoutMS=10_000,
+    # )
+    # client.admin.command("ping")
+    # print("MongoDB connection succeeded")
 
     print("Loading organizations...")
 
@@ -122,6 +122,7 @@ def main():
             continue
 
         organization_by_code[str(code)] = org.get("preferredLabel", "")
+        # print(f"Organization preferredLabel: {organization_by_code[str(code)]}")
         organizationCode_by_code[str(code)] = org.get("code", "")
         organizationType_by_code[str(code)] = org.get("organizationType", {}).get(
             "description", ""
@@ -133,7 +134,7 @@ def main():
             "code", ""
         )
 
-    print(f"Loaded {len(organization_by_code):,} organizations.")
+    # print(f"Loaded {len(organization_by_code):,} organizations.")
 
     # Load all cofog docs and build index
     cofog_docs = list(Cofog.objects())
@@ -177,6 +178,7 @@ def main():
         cofog2_name = get_cofog_name(cofog2_code, cofog_index)
         cofog3_name = get_cofog_name(cofog3_code, cofog_index)
 
+        print(org_code, organization_by_code.get(str(org_code), ""))
         doc = {
             "createdAt": {"$date": now_iso},
             "updatedAt": {"$date": now_iso},
