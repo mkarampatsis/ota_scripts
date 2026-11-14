@@ -188,7 +188,8 @@ def main():
             "remitLocalOrGlobal": remit_local_or_global
             if pd.notna(remit_local_or_global)
             else "",
-            "legalProvisionRefs": [{"$oid": oid} for oid in LEGAL_PROVISION_REFS],
+            # "legalProvisionRefs": [{"$oid": oid} for oid in LEGAL_PROVISION_REFS],
+            "legalProvisionRefs": [],
             "instructionProvisionRefs": [],
             "publicPolicyAgency": {
                 "organization": organization_by_code.get(str(org_code), ""),
